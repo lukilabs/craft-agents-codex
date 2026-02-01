@@ -101,7 +101,8 @@ When a request is blocked, the proxy responds with `403` and includes:
   - `blocked-by-policy`
 
 In "limited" mode, only `GET`, `HEAD`, and `OPTIONS` are allowed. HTTPS `CONNECT` requests require
-MITM to enforce limited-mode method policy; otherwise they are blocked.
+MITM to enforce limited-mode method policy; otherwise they are blocked. SOCKS5 remains blocked in
+limited mode.
 
 ## Library API
 
