@@ -479,6 +479,7 @@ pub struct ConfigReadParams {
     /// Optional working directory to resolve project config layers. If specified,
     /// return the effective config as seen from that directory (i.e., including any
     /// project layers between `cwd` and the project/repo root).
+    #[ts(optional = nullable)]
     pub cwd: Option<String>,
 }
 
@@ -524,7 +525,9 @@ pub struct ConfigValueWriteParams {
     pub value: JsonValue,
     pub merge_strategy: MergeStrategy,
     /// Path to the config file to write; defaults to the user's `config.toml` when omitted.
+    #[ts(optional = nullable)]
     pub file_path: Option<String>,
+    #[ts(optional = nullable)]
     pub expected_version: Option<String>,
 }
 
@@ -534,7 +537,9 @@ pub struct ConfigValueWriteParams {
 pub struct ConfigBatchWriteParams {
     pub edits: Vec<ConfigEdit>,
     /// Path to the config file to write; defaults to the user's `config.toml` when omitted.
+    #[ts(optional = nullable)]
     pub file_path: Option<String>,
+    #[ts(optional = nullable)]
     pub expected_version: Option<String>,
 }
 
@@ -934,6 +939,7 @@ pub struct ChatgptAuthTokensRefreshParams {
     ///
     /// This may be `null` when the prior ID token did not include a workspace
     /// identifier (`chatgpt_account_id`) or when the token could not be parsed.
+    #[ts(optional = nullable)]
     pub previous_account_id: Option<String>,
 }
 
@@ -978,8 +984,10 @@ pub struct GetAccountResponse {
 #[ts(export_to = "v2/")]
 pub struct ModelListParams {
     /// Opaque pagination cursor returned by a previous call.
+    #[ts(optional = nullable)]
     pub cursor: Option<String>,
     /// Optional page size; defaults to a reasonable server-side value.
+    #[ts(optional = nullable)]
     pub limit: Option<u32>,
 }
 
@@ -1036,8 +1044,10 @@ pub struct CollaborationModeListResponse {
 #[ts(export_to = "v2/")]
 pub struct ListMcpServerStatusParams {
     /// Opaque pagination cursor returned by a previous call.
+    #[ts(optional = nullable)]
     pub cursor: Option<String>,
     /// Optional page size; defaults to a server-defined value.
+    #[ts(optional = nullable)]
     pub limit: Option<u32>,
 }
 
@@ -1067,8 +1077,10 @@ pub struct ListMcpServerStatusResponse {
 #[ts(export_to = "v2/")]
 pub struct AppsListParams {
     /// Opaque pagination cursor returned by a previous call.
+    #[ts(optional = nullable)]
     pub cursor: Option<String>,
     /// Optional page size; defaults to a reasonable server-side value.
+    #[ts(optional = nullable)]
     pub limit: Option<u32>,
 }
 
@@ -1113,10 +1125,10 @@ pub struct McpServerRefreshResponse {}
 pub struct McpServerOauthLoginParams {
     pub name: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    #[ts(optional)]
+    #[ts(optional = nullable)]
     pub scopes: Option<Vec<String>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    #[ts(optional)]
+    #[ts(optional = nullable)]
     pub timeout_secs: Option<i64>,
 }
 
@@ -1132,7 +1144,9 @@ pub struct McpServerOauthLoginResponse {
 #[ts(export_to = "v2/")]
 pub struct FeedbackUploadParams {
     pub classification: String,
+    #[ts(optional = nullable)]
     pub reason: Option<String>,
+    #[ts(optional = nullable)]
     pub thread_id: Option<String>,
     pub include_logs: bool,
 }
@@ -1150,8 +1164,11 @@ pub struct FeedbackUploadResponse {
 pub struct CommandExecParams {
     pub command: Vec<String>,
     #[ts(type = "number | null")]
+    #[ts(optional = nullable)]
     pub timeout_ms: Option<i64>,
+    #[ts(optional = nullable)]
     pub cwd: Option<PathBuf>,
+    #[ts(optional = nullable)]
     pub sandbox_policy: Option<SandboxPolicy>,
 }
 
@@ -1172,17 +1189,28 @@ pub struct CommandExecResponse {
 #[serde(rename_all = "camelCase")]
 #[ts(export_to = "v2/")]
 pub struct ThreadStartParams {
+    #[ts(optional = nullable)]
     pub model: Option<String>,
+    #[ts(optional = nullable)]
     pub model_provider: Option<String>,
+    #[ts(optional = nullable)]
     pub cwd: Option<String>,
+    #[ts(optional = nullable)]
     pub approval_policy: Option<AskForApproval>,
+    #[ts(optional = nullable)]
     pub sandbox: Option<SandboxMode>,
+    #[ts(optional = nullable)]
     pub config: Option<HashMap<String, JsonValue>>,
+    #[ts(optional = nullable)]
     pub base_instructions: Option<String>,
+    #[ts(optional = nullable)]
     pub developer_instructions: Option<String>,
+    #[ts(optional = nullable)]
     pub personality: Option<Personality>,
+    #[ts(optional = nullable)]
     pub ephemeral: Option<bool>,
     #[experimental("thread/start.dynamicTools")]
+    #[ts(optional = nullable)]
     pub dynamic_tools: Option<Vec<DynamicToolSpec>>,
     /// Test-only experimental field used to validate experimental gating and
     /// schema filtering behavior in a stable way.
@@ -1243,21 +1271,32 @@ pub struct ThreadResumeParams {
     /// [UNSTABLE] FOR CODEX CLOUD - DO NOT USE.
     /// If specified, the thread will be resumed with the provided history
     /// instead of loaded from disk.
+    #[ts(optional = nullable)]
     pub history: Option<Vec<ResponseItem>>,
 
     /// [UNSTABLE] Specify the rollout path to resume from.
     /// If specified, the thread_id param will be ignored.
+    #[ts(optional = nullable)]
     pub path: Option<PathBuf>,
 
     /// Configuration overrides for the resumed thread, if any.
+    #[ts(optional = nullable)]
     pub model: Option<String>,
+    #[ts(optional = nullable)]
     pub model_provider: Option<String>,
+    #[ts(optional = nullable)]
     pub cwd: Option<String>,
+    #[ts(optional = nullable)]
     pub approval_policy: Option<AskForApproval>,
+    #[ts(optional = nullable)]
     pub sandbox: Option<SandboxMode>,
+    #[ts(optional = nullable)]
     pub config: Option<HashMap<String, serde_json::Value>>,
+    #[ts(optional = nullable)]
     pub base_instructions: Option<String>,
+    #[ts(optional = nullable)]
     pub developer_instructions: Option<String>,
+    #[ts(optional = nullable)]
     pub personality: Option<Personality>,
 }
 
@@ -1289,16 +1328,25 @@ pub struct ThreadForkParams {
 
     /// [UNSTABLE] Specify the rollout path to fork from.
     /// If specified, the thread_id param will be ignored.
+    #[ts(optional = nullable)]
     pub path: Option<PathBuf>,
 
     /// Configuration overrides for the forked thread, if any.
+    #[ts(optional = nullable)]
     pub model: Option<String>,
+    #[ts(optional = nullable)]
     pub model_provider: Option<String>,
+    #[ts(optional = nullable)]
     pub cwd: Option<String>,
+    #[ts(optional = nullable)]
     pub approval_policy: Option<AskForApproval>,
+    #[ts(optional = nullable)]
     pub sandbox: Option<SandboxMode>,
+    #[ts(optional = nullable)]
     pub config: Option<HashMap<String, serde_json::Value>>,
+    #[ts(optional = nullable)]
     pub base_instructions: Option<String>,
+    #[ts(optional = nullable)]
     pub developer_instructions: Option<String>,
 }
 
@@ -1383,19 +1431,25 @@ pub struct ThreadRollbackResponse {
 #[ts(export_to = "v2/")]
 pub struct ThreadListParams {
     /// Opaque pagination cursor returned by a previous call.
+    #[ts(optional = nullable)]
     pub cursor: Option<String>,
     /// Optional page size; defaults to a reasonable server-side value.
+    #[ts(optional = nullable)]
     pub limit: Option<u32>,
     /// Optional sort key; defaults to created_at.
+    #[ts(optional = nullable)]
     pub sort_key: Option<ThreadSortKey>,
     /// Optional provider filter; when set, only sessions recorded under these
     /// providers are returned. When present but empty, includes all providers.
+    #[ts(optional = nullable)]
     pub model_providers: Option<Vec<String>>,
     /// Optional source filter; when set, only sessions from these source kinds
     /// are returned. When omitted or empty, defaults to interactive sources.
+    #[ts(optional = nullable)]
     pub source_kinds: Option<Vec<ThreadSourceKind>>,
     /// Optional archived filter; when set to true, only archived threads are returned.
     /// If false or null, only non-archived threads are returned.
+    #[ts(optional = nullable)]
     pub archived: Option<bool>,
 }
 
@@ -1440,8 +1494,10 @@ pub struct ThreadListResponse {
 #[ts(export_to = "v2/")]
 pub struct ThreadLoadedListParams {
     /// Opaque pagination cursor returned by a previous call.
+    #[ts(optional = nullable)]
     pub cursor: Option<String>,
     /// Optional page size; defaults to no limit.
+    #[ts(optional = nullable)]
     pub limit: Option<u32>,
 }
 
@@ -1829,24 +1885,33 @@ pub struct TurnStartParams {
     pub thread_id: String,
     pub input: Vec<UserInput>,
     /// Override the working directory for this turn and subsequent turns.
+    #[ts(optional = nullable)]
     pub cwd: Option<PathBuf>,
     /// Override the approval policy for this turn and subsequent turns.
+    #[ts(optional = nullable)]
     pub approval_policy: Option<AskForApproval>,
     /// Override the sandbox policy for this turn and subsequent turns.
+    #[ts(optional = nullable)]
     pub sandbox_policy: Option<SandboxPolicy>,
     /// Override the model for this turn and subsequent turns.
+    #[ts(optional = nullable)]
     pub model: Option<String>,
     /// Override the reasoning effort for this turn and subsequent turns.
+    #[ts(optional = nullable)]
     pub effort: Option<ReasoningEffort>,
     /// Override the reasoning summary for this turn and subsequent turns.
+    #[ts(optional = nullable)]
     pub summary: Option<ReasoningSummary>,
     /// Override the personality for this turn and subsequent turns.
+    #[ts(optional = nullable)]
     pub personality: Option<Personality>,
     /// Optional JSON Schema used to constrain the final assistant message for this turn.
+    #[ts(optional = nullable)]
     pub output_schema: Option<JsonValue>,
 
     /// EXPERIMENTAL - set a pre-set collaboration mode.
     /// Takes precedence over model, reasoning_effort, and developer instructions if set.
+    #[ts(optional = nullable)]
     pub collaboration_mode: Option<CollaborationMode>,
 }
 
@@ -1860,6 +1925,7 @@ pub struct ReviewStartParams {
     /// Where to run the review: inline (default) on the current thread or
     /// detached on a new thread (returned in `reviewThreadId`).
     #[serde(default)]
+    #[ts(optional = nullable)]
     pub delivery: Option<ReviewDelivery>,
 }
 
@@ -2635,20 +2701,22 @@ pub struct CommandExecutionRequestApprovalParams {
     pub turn_id: String,
     pub item_id: String,
     /// Optional explanatory reason (e.g. request for network access).
+    #[ts(optional = nullable)]
     pub reason: Option<String>,
     /// The command to be executed.
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    #[ts(optional)]
+    #[ts(optional = nullable)]
     pub command: Option<String>,
     /// The command's working directory.
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    #[ts(optional)]
+    #[ts(optional = nullable)]
     pub cwd: Option<PathBuf>,
     /// Best-effort parsed command actions for friendly display.
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    #[ts(optional)]
+    #[ts(optional = nullable)]
     pub command_actions: Option<Vec<CommandAction>>,
     /// Optional proposed execpolicy amendment to allow similar commands without prompting.
+    #[ts(optional = nullable)]
     pub proposed_execpolicy_amendment: Option<ExecPolicyAmendment>,
 }
 
@@ -2667,9 +2735,11 @@ pub struct FileChangeRequestApprovalParams {
     pub turn_id: String,
     pub item_id: String,
     /// Optional explanatory reason (e.g. request for extra write access).
+    #[ts(optional = nullable)]
     pub reason: Option<String>,
     /// [UNSTABLE] When set, the agent is asking the user to allow writes under this root
     /// for the remainder of the session (unclear if this is honored today).
+    #[ts(optional = nullable)]
     pub grant_root: Option<PathBuf>,
 }
 
