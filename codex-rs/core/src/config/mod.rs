@@ -1364,6 +1364,9 @@ impl Config {
         let active_project = cfg
             .get_active_project(&resolved_cwd)
             .unwrap_or(ProjectConfig { trust_level: None });
+        let sandbox_mode_was_explicit = sandbox_mode.is_some()
+            || config_profile.sandbox_mode.is_some()
+            || cfg.sandbox_mode.is_some();
 
         let windows_sandbox_level = WindowsSandboxLevel::from_features(&features);
         let SandboxPolicyResolution {
@@ -1401,9 +1404,7 @@ impl Config {
             .is_some()
             || config_profile.approval_policy.is_some()
             || cfg.approval_policy.is_some()
-            || sandbox_mode.is_some()
-            || config_profile.sandbox_mode.is_some()
-            || cfg.sandbox_mode.is_some();
+            || sandbox_mode_was_explicit;
 
         let mut model_providers = built_in_model_providers();
         // Merge user-defined providers into the built-in list.
@@ -1541,9 +1542,27 @@ impl Config {
         constrained_approval_policy
             .set(approval_policy)
             .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidInput, format!("{e}")))?;
-        constrained_sandbox_policy
-            .set(sandbox_policy)
-            .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidInput, format!("{e}")))?;
+        if let Err(err) = constrained_sandbox_policy.set(sandbox_policy) {
+            let can_fallback_to_requirements_default = !sandbox_mode_was_explicit
+                && matches!(
+                    err,
+                    ConstraintError::InvalidValue {
+                        field_name: "sandbox_mode",
+                        ..
+                    }
+                );
+            if can_fallback_to_requirements_default {
+                tracing::warn!(
+                    error = %err,
+                    "default sandbox policy is disallowed by requirements; falling back to required default"
+                );
+            } else {
+                return Err(std::io::Error::new(
+                    std::io::ErrorKind::InvalidInput,
+                    format!("{err}"),
+                ));
+            }
+        }
 
         let mcp_servers = constrain_mcp_servers(cfg.mcp_servers.clone(), mcp_servers.as_ref())
             .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidInput, format!("{e}")))?;
@@ -4504,6 +4523,81 @@ mcp_oauth_callback_port = 5678
             );
         }
 
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn requirements_disallowing_default_sandbox_falls_back_to_required_default()
+    -> std::io::Result<()> {
+        let codex_home = TempDir::new()?;
+        let workspace = TempDir::new()?;
+        let workspace_key = workspace.path().to_string_lossy().replace('\\', "\\\\");
+        std::fs::write(
+            codex_home.path().join(CONFIG_TOML_FILE),
+            format!(
+                r#"
+[projects."{workspace_key}"]
+trust_level = "trusted"
+"#
+            ),
+        )?;
+
+        let requirements = crate::config_loader::ConfigRequirementsToml {
+            allowed_approval_policies: None,
+            allowed_sandbox_modes: Some(vec![
+                crate::config_loader::SandboxModeRequirement::ReadOnly,
+            ]),
+            mcp_servers: None,
+            rules: None,
+            enforce_residency: None,
+        };
+
+        let config = ConfigBuilder::default()
+            .codex_home(codex_home.path().to_path_buf())
+            .fallback_cwd(Some(workspace.path().to_path_buf()))
+            .cloud_requirements(CloudRequirementsLoader::new(
+                async move { Some(requirements) },
+            ))
+            .build()
+            .await?;
+
+        assert_eq!(*config.sandbox_policy.get(), SandboxPolicy::ReadOnly);
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn explicit_sandbox_mode_still_errors_when_disallowed_by_requirements()
+    -> std::io::Result<()> {
+        let codex_home = TempDir::new()?;
+        std::fs::write(
+            codex_home.path().join(CONFIG_TOML_FILE),
+            r#"sandbox_mode = "danger-full-access"
+"#,
+        )?;
+
+        let requirements = crate::config_loader::ConfigRequirementsToml {
+            allowed_approval_policies: None,
+            allowed_sandbox_modes: Some(vec![
+                crate::config_loader::SandboxModeRequirement::ReadOnly,
+            ]),
+            mcp_servers: None,
+            rules: None,
+            enforce_residency: None,
+        };
+
+        let err = ConfigBuilder::default()
+            .codex_home(codex_home.path().to_path_buf())
+            .fallback_cwd(Some(codex_home.path().to_path_buf()))
+            .cloud_requirements(CloudRequirementsLoader::new(
+                async move { Some(requirements) },
+            ))
+            .build()
+            .await
+            .expect_err("explicit disallowed mode should still fail");
+        assert_eq!(err.kind(), std::io::ErrorKind::InvalidInput);
+        let message = err.to_string();
+        assert!(message.contains("invalid value for `sandbox_mode`"));
+        assert!(message.contains("set by cloud requirements"));
         Ok(())
     }
 }
