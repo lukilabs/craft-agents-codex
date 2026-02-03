@@ -28,6 +28,7 @@ pub(crate) fn map_api_error(err: ApiError) -> CodexErr {
             status,
             body: message,
             url: None,
+            cf_ray: None,
             request_id: None,
         }),
         ApiError::InvalidRequest { message } => CodexErr::InvalidRequest(message),
@@ -89,13 +90,14 @@ pub(crate) fn map_api_error(err: ApiError) -> CodexErr {
 
                     CodexErr::RetryLimit(RetryLimitReachedError {
                         status,
-                        request_id: extract_request_id(headers.as_ref()),
+                        request_id: extract_request_tracking_id(headers.as_ref()),
                     })
                 } else {
                     CodexErr::UnexpectedStatus(UnexpectedResponseError {
                         status,
                         body: body_text,
                         url,
+                        cf_ray: extract_cf_ray(headers.as_ref()),
                         request_id: extract_request_id(headers.as_ref()),
                     })
                 }
@@ -149,15 +151,23 @@ mod tests {
     }
 }
 
+fn extract_request_tracking_id(headers: Option<&HeaderMap>) -> Option<String> {
+    extract_request_id(headers).or_else(|| extract_cf_ray(headers))
+}
+
 fn extract_request_id(headers: Option<&HeaderMap>) -> Option<String> {
+    extract_header(headers, "x-request-id").or_else(|| extract_header(headers, "x-oai-request-id"))
+}
+
+fn extract_cf_ray(headers: Option<&HeaderMap>) -> Option<String> {
+    extract_header(headers, "cf-ray")
+}
+
+fn extract_header(headers: Option<&HeaderMap>, name: &str) -> Option<String> {
     headers.and_then(|map| {
-        ["cf-ray", "x-request-id", "x-oai-request-id"]
-            .iter()
-            .find_map(|name| {
-                map.get(*name)
-                    .and_then(|v| v.to_str().ok())
-                    .map(str::to_string)
-            })
+        map.get(name)
+            .and_then(|value| value.to_str().ok())
+            .map(str::to_string)
     })
 }
 
